@@ -1,0 +1,112 @@
+---
+output: 
+  html_document:
+    css: 
+     - custom.css
+     - https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning=FALSE)
+set.seed(10000)
+library(tidyverse)
+library(magrittr)
+library(httr)
+library(jsonlite)
+library(psych)
+library(knitr)
+```
+
+* Data Collection
+
+```{r}
+games.data <- GET('https://api.mysportsfeeds.com/v1.2/pull/nhl/2015-2016-regular/full_game_schedule.json', authenticate('njpsy', 'asdfasdf'), 
+            add_headers('Content-Type'='application/json', 'Accept-Encoding'='gzip')) %>%
+  content(as='text', encoding='UTF-8') %>%
+  fromJSON(flatten=TRUE) %>%
+  extract2(1) %>%
+  extract2(2) %>%
+  as.tibble()
+
+game.dates <- games.data %>%
+  select(6) %>%
+  mutate(date=str_replace(date, '(\\d+)-(\\d+)-(\\d+)', '\\1\\2\\3')) %>%
+  unique()
+
+API.Query <- function(date){
+  Sys.sleep(1)
+  GET('https://api.mysportsfeeds.com/v1.2/pull/nhl/2015-2016-regular/scoreboard.json', authenticate('njpsy', 'asdfasdf'), 
+      add_headers('Content-Type'='application/json', 'Accept-Encoding'='gzip'),
+      query=list('fordate'=date)) %>%
+    content(as='text', encoding='UTF-8') %>%
+    fromJSON(flatten=TRUE) %>%
+    extract2(1) %>%
+    extract2(2) %>%
+    as.tibble()
+}
+
+box.data <- game.dates$date %>%
+  map_df(~API.Query(.)) %>%
+  select(8, 24) %>%
+  unnest() %>%
+  mutate(goals = awayScore %>% as.numeric() + homeScore %>% as.numeric()) %>%
+  select(-c(3:6)) %>%
+  setNames(c('game.ID'='id', '@number'='period', 'goals'='goals')) %>%
+  filter(period %in% 1:3) %>%
+  as.tibble()
+```
+
+* Research question
+
+In the NHL (National Hockey League), is there a relationship between the period of the game and number of goals scored by either team?
+
+* What are the cases, and how many are there?
+
+Each case represents the number goals scored per period in each game of the 2015-2016 regular hockey season. There are 1230 games from which 100 will be selected via SRS.
+
+* Describe the method of data collection.
+
+Raw data is collected by mysportsfeed.com which maintains an API on all major sports created and supported by fans. I will query the API and collected the required data.
+
+* What type of study is this (observational/experiment)?
+
+This is an observational study.
+
+* Data Source: If you collected the data, state self-collected. If not, provide a citation/link.
+
+The total raw data is collected by [mysportsfeed.com](https://mysportsfeed.com), however I will be querying, cleaning and storing the relevant data.
+
+* Response: What is the response variable, and what type is it (numerical/categorical)?
+
+The response variable is the number of goals scored in the period and is numerical.
+
+* Explanatory: What is the explanatory variable(s), and what type is it (numerical/categorival)?
+
+The explanatory variable is the period of the game and is categorical (1st, 2nd or 3rd)
+
+* Relevant summary statistics
+
+```{r}
+box.data %>%
+  filter(period == '1') %>%
+  select(goals) %>%
+  describe()
+
+box.data %>%
+  filter(period == '2') %>%
+  select(goals) %>%
+  describe()
+
+box.data %>%
+  filter(period == '3') %>%
+  select(goals) %>%
+  describe()
+
+ggplot(box.data) +
+  geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period))  +
+  facet_wrap(~period, nrow=3, ncol=1) +
+  labs(x='Goals', 
+       y='Proportion of Goals Scored',
+       fill='Period',
+       title='Proportion of Goals Scored')
+```
