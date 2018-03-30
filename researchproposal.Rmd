@@ -17,6 +17,13 @@ library(psych)
 library(knitr)
 ```
 
+<div class='jumbotron'>
+  <h2 class='display-3 text-uppercase'>Project Proposal</h2>
+  <h4 class='right text-uppercase'>By Brian Weinfeld</h4>
+  <div class='clearfix'></div>
+  <h5 class='right text-uppercase'>March 29, 2018</h5>
+</div>
+
 * Data Collection
 
 ```{r}
