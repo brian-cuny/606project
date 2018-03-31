@@ -4,6 +4,8 @@ library(magrittr)
 library(httr)
 library(jsonlite)
 library(psych)
+library(ggrepel)
+library(directlabels)
 
 games.data <- GET('https://api.mysportsfeeds.com/v1.2/pull/nhl/2015-2016-regular/full_game_schedule.json', authenticate('njpsy', 'asdfasdf'), 
             add_headers('Content-Type'='application/json', 'Accept-Encoding'='gzip')) %>%
@@ -58,6 +60,7 @@ box.data %>%
 
 ggplot(box.data) +
   geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period))  +
+  scale_x_discrete(limits=0:7, breaks=0:7) + 
   facet_wrap(~period, nrow=3, ncol=1) +
   labs(x='Goals', 
        y='Proportion of Goals Scored',
@@ -65,8 +68,29 @@ ggplot(box.data) +
        title='Proportion of Goals Scored')
 
 
+ggplot(box.data) +
+  geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period), position='dodge', show.legend)  +
+  scale_x_discrete(limits=0:7, breaks=0:7) + 
+  geom_dl(aes(label=period), method='smart.grid') +
+  labs(x='Goals', 
+       y='Proportion of Goals Scored',
+       fill='Period',
+       title='Proportion of Goals Scored')
 
 
 
+ggplot(box.data) +
+  geom_bar(aes(x=goals, y=..count.., fill=period))  +
+  scale_x_discrete(limits=0:7, breaks=0:7) + 
+  labs(x='Goals', 
+       y='Proportion of Goals Scored',
+       fill='Period',
+       title='Proportion of Goals Scored')
+
+
+ggplot(box.data, aes(fill=factor(goals), group=goals)) +
+  geom_bar(aes(x=period), position=position_fill(reverse=TRUE)) +
+  scale_fill_brewer(palette = 'YlOrRd') + 
+  guides(fill=guide_legend(reverse=TRUE))
 
 
