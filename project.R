@@ -69,9 +69,8 @@ ggplot(box.data) +
 
 
 ggplot(box.data) +
-  geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period), position='dodge', show.legend)  +
+  geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period), position='dodge', show.legend=FALSE)  +
   scale_x_discrete(limits=0:7, breaks=0:7) + 
-  geom_dl(aes(label=period), method='smart.grid') +
   labs(x='Goals', 
        y='Proportion of Goals Scored',
        fill='Period',
@@ -80,7 +79,24 @@ ggplot(box.data) +
 
 
 ggplot(box.data) +
-  geom_bar(aes(x=goals, y=..count.., fill=period))  +
+  geom_histogram(aes(x=goals, fill=period), bins=8, show.legend=FALSE)  +
+  scale_x_discrete(limits=0:7, breaks=0:7) + 
+  facet_wrap(~period, ncol=1) + 
+  labs(x='Goals', 
+       y='Proportion of Goals Scored',
+       fill='Period',
+       title='Proportion of Goals Scored')
+
+ggplot(box.data) +
+  geom_freqpoly(aes(x=goals, y=..density.., color=period), bins=8, show.legend=FALSE)  +
+  scale_x_discrete(limits=0:7, breaks=0:7) + 
+  labs(x='Goals', 
+       y='Proportion of Goals Scored',
+       fill='Period',
+       title='Proportion of Goals Scored')
+
+ggplot(box.data) +
+  geom_density(aes(x=goals, fill=period, color=period), show.legend=FALSE, alpha=0.2, adjust=3)  +
   scale_x_discrete(limits=0:7, breaks=0:7) + 
   labs(x='Goals', 
        y='Proportion of Goals Scored',
@@ -88,9 +104,41 @@ ggplot(box.data) +
        title='Proportion of Goals Scored')
 
 
+ggplot(box.data) +
+  geom_violin(aes(x=period, y=goals), show.legend=FALSE, adjust=3)  +
+  labs(x='Goals', 
+       y='Proportion of Goals Scored',
+       fill='Period',
+       title='Proportion of Goals Scored')
+
+
+
 ggplot(box.data, aes(fill=factor(goals), group=goals)) +
   geom_bar(aes(x=period), position=position_fill(reverse=TRUE)) +
   scale_fill_brewer(palette = 'YlOrRd') + 
   guides(fill=guide_legend(reverse=TRUE))
+
+
+box.data %>%
+  group_by(period) %>%
+  count(a = goals %in% max(goals),
+        b = max(goals)) %>%
+  filter(a == TRUE)
+
+
+
+ggplot(mtcars, aes(mpg, disp)) +
+  geom_point(aes(size=mpg/disp), alpha=1/3) +
+  scale_size_area()
+  geom_raster(aes(fill=ggplot::density))
+  geom_contour(aes(z=density, color=..level..))
+
+
+
+
+
+
+
+
 
 
