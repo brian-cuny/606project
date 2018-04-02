@@ -5,6 +5,7 @@ library(httr)
 library(jsonlite)
 library(psych)
 library(ggrepel)
+library(scales)
 library(directlabels)
 
 games.data <- GET('https://api.mysportsfeeds.com/v1.2/pull/nhl/2015-2016-regular/full_game_schedule.json', authenticate('njpsy', 'asdfasdf'), 
@@ -88,16 +89,19 @@ ggplot(box.data) +
        title='Proportion of Goals Scored')
 
 ggplot(box.data) +
-  geom_freqpoly(aes(x=goals, y=..density.., color=period), bins=8, show.legend=FALSE)  +
+  geom_freqpoly(aes(x=goals, y=..density.., color=period), bins=8)  +
   scale_x_discrete(limits=0:7, breaks=0:7) + 
+  theme(legend.position=c(1, 1), legend.justification=c(1,1)) + 
   labs(x='Goals', 
        y='Proportion of Goals Scored',
-       fill='Period',
+       color='Period',
        title='Proportion of Goals Scored')
 
 ggplot(box.data) +
-  geom_density(aes(x=goals, fill=period, color=period), show.legend=FALSE, alpha=0.2, adjust=3)  +
+  geom_density(aes(x=goals, fill=period, color=period), alpha=0.2, adjust=3)  +
   scale_x_discrete(limits=0:7, breaks=0:7) + 
+  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
+  scale_color_discrete(breaks=NULL) + 
   labs(x='Goals', 
        y='Proportion of Goals Scored',
        fill='Period',
@@ -115,7 +119,13 @@ ggplot(box.data) +
 
 ggplot(box.data, aes(fill=factor(goals), group=goals)) +
   geom_bar(aes(x=period), position=position_fill(reverse=TRUE)) +
-  scale_fill_brewer(palette = 'YlOrRd') + 
+  scale_fill_brewer(palette = 'YlOrRd') +
+  scale_y_continuous(labels=percent_format(),
+                     expand=c(0, 0)) +
+  labs(fill='Goals',
+       x='Period',
+       y='Proportion',
+       title='Proportion of Goals Scored by Period') + 
   guides(fill=guide_legend(reverse=TRUE))
 
 
