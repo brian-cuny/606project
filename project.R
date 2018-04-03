@@ -1,4 +1,3 @@
-set.seed(10000)
 library(tidyverse)
 library(magrittr)
 library(httr)
@@ -59,6 +58,11 @@ box.data %>%
   select(goals) %>%
   describe()
 
+summary.box.data <- box.data %>%
+  group_by(period) %>%
+  summarize(m = mean(goals)) %>%
+  rename(period2 = period)
+
 ggplot(box.data) +
   geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period))  +
   scale_x_discrete(limits=0:7, breaks=0:7) + 
@@ -76,7 +80,6 @@ ggplot(box.data) +
        y='Proportion of Goals Scored',
        fill='Period',
        title='Proportion of Goals Scored')
-
 
 
 ggplot(box.data) +
@@ -99,9 +102,11 @@ ggplot(box.data) +
 
 ggplot(box.data) +
   geom_density(aes(x=goals, fill=period, color=period), alpha=0.2, adjust=3)  +
-  scale_x_discrete(limits=0:7, breaks=0:7) + 
-  theme(legend.position=c(1,1), legend.justification=c(1,1)) +
+  geom_vline(data=summary.box.data, aes(xintercept=m, color=period2)) +
+  scale_x_discrete(limits=0:7, breaks=0:7, expand=c(0, 0)) + 
+  theme(legend.position=c(.8, .8), legend.justification=c(1, 1), legend.background=element_rect(color='darkblue')) +
   scale_color_discrete(breaks=NULL) + 
+  scale_y_continuous(expand=c(0,0,.01,.01)) +
   labs(x='Goals', 
        y='Proportion of Goals Scored',
        fill='Period',
