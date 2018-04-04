@@ -63,64 +63,77 @@ summary.box.data <- box.data %>%
   summarize(m = mean(goals)) %>%
   rename(period2 = period)
 
-ggplot(box.data) +
+box.data %>%
+  mutate(period=paste('Period ', period)) %>%
+  ggplot() +
   geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period))  +
   scale_x_discrete(limits=0:7, breaks=0:7) + 
-  facet_wrap(~period, nrow=3, ncol=1) +
-  labs(x='Goals', 
-       y='Proportion of Goals Scored',
-       fill='Period',
-       title='Proportion of Goals Scored')
+  scale_y_continuous(limits=c(0, 0.12), breaks=seq(0, 0.12, 0.02), expand=c(0, 0), labels=percent) +
+  facet_wrap(~period, ncol=1) +
+  labs(x=NULL,
+       y=NULL,
+       title='Proportion of Goals Scored by Period') +
+  theme_bw() + 
+  theme(legend.position='None',
+        strip.background=element_rect(fill='grey70'),
+        strip.text=element_text(color='black', size=12),
+        axis.text=element_text(size=10),
+        panel.grid.minor=element_blank(),
+        panel.grid.major.x=element_blank())
 
 
 ggplot(box.data) +
-  geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period), position='dodge', show.legend=FALSE)  +
+  geom_histogram(aes(x=goals, y=..count../sum(..count..), fill=period), bins=8, show.legend=FALSE)  +
   scale_x_discrete(limits=0:7, breaks=0:7) + 
-  labs(x='Goals', 
-       y='Proportion of Goals Scored',
-       fill='Period',
-       title='Proportion of Goals Scored')
-
-
-ggplot(box.data) +
-  geom_histogram(aes(x=goals, fill=period), bins=8, show.legend=FALSE)  +
-  scale_x_discrete(limits=0:7, breaks=0:7) + 
-  facet_wrap(~period, ncol=1) + 
-  labs(x='Goals', 
-       y='Proportion of Goals Scored',
-       fill='Period',
-       title='Proportion of Goals Scored')
-
-ggplot(box.data) +
-  geom_freqpoly(aes(x=goals, y=..density.., color=period), bins=8)  +
-  scale_x_discrete(limits=0:7, breaks=0:7) + 
-  theme(legend.position=c(1, 1), legend.justification=c(1,1)) + 
-  labs(x='Goals', 
-       y='Proportion of Goals Scored',
-       color='Period',
-       title='Proportion of Goals Scored')
+  scale_y_continuous(limits=c(0, 0.12), breaks=seq(0, 0.12, 0.02), expand=c(0, 0), labels=percent) +
+  facet_wrap(~period, ncol=1) +
+  labs(x=NULL,
+       y=NULL,
+       title='Proportion of Goals Scored by Period') +
+  theme_bw() + 
+  theme(legend.position='None',
+        strip.background=element_rect(fill='grey70'),
+        strip.text=element_text(color='black', size=12),
+        axis.text=element_text(size=10),
+        panel.grid.minor=element_blank(),
+        panel.grid.major.x=element_blank())
 
 ggplot(box.data) +
   geom_density(aes(x=goals, fill=period, color=period), alpha=0.2, adjust=3)  +
   geom_vline(data=summary.box.data, aes(xintercept=m, color=period2)) +
   scale_x_discrete(limits=0:7, breaks=0:7, expand=c(0, 0)) + 
-  theme(legend.position=c(.8, .8), legend.justification=c(1, 1), legend.background=element_rect(color='darkblue')) +
   scale_color_discrete(breaks=NULL) + 
   scale_y_continuous(expand=c(0,0,.01,.01)) +
   labs(x='Goals', 
        y='Proportion of Goals Scored',
        fill='Period',
-       title='Proportion of Goals Scored')
+       title='Proportion of Goals Scored') +
+  guides(fill=guide_legend(ncol=3, label.position='top')) +
+  theme_bw() + 
+  theme(legend.position=c(.9, .8), 
+        legend.justification=c(1, 1), 
+        legend.background=element_rect(color='darkblue'),
+        legend.text=element_text(size=16),
+        legend.title=element_text(size=16),
+        legend.title.align=0.5,
+        legend.text.align=0.5,
+        legend.key.size=unit(0.8, 'cm'),
+        axis.text=element_text(size=12))
 
 
 ggplot(box.data) +
-  geom_violin(aes(x=period, y=goals), show.legend=FALSE, adjust=3)  +
-  labs(x='Goals', 
-       y='Proportion of Goals Scored',
+  geom_violin(aes(x=period, y=goals, fill=period), show.legend=FALSE, adjust=3)  +
+  scale_y_discrete(limits=0:7, breaks=0:7, expand=c(0, 0, .05, .05)) +
+  labs(x='Period', 
+       y='Goals Scored',
        fill='Period',
-       title='Proportion of Goals Scored')
-
-
+       title='Number of Goals Scored by Period') +
+  scale_fill_brewer(palette='Pastel1') +
+  theme_minimal() +
+  theme(panel.grid.major.x=element_blank(),
+        panel.background=element_rect(color='black'),
+        axis.line.x=element_line(color='black'),
+        axis.text=element_text(size=12))
 
 ggplot(box.data, aes(fill=factor(goals), group=goals)) +
   geom_bar(aes(x=period), position=position_fill(reverse=TRUE)) +
@@ -129,8 +142,8 @@ ggplot(box.data, aes(fill=factor(goals), group=goals)) +
                      expand=c(0, 0)) +
   labs(fill='Goals',
        x='Period',
-       y='Proportion',
-       title='Proportion of Goals Scored by Period') + 
+       y=NULL,
+       title='Makeup of Scoring by Period') + 
   guides(fill=guide_legend(reverse=TRUE))
 
 
@@ -139,21 +152,3 @@ box.data %>%
   count(a = goals %in% max(goals),
         b = max(goals)) %>%
   filter(a == TRUE)
-
-
-
-ggplot(mtcars, aes(mpg, disp)) +
-  geom_point(aes(size=mpg/disp), alpha=1/3) +
-  scale_size_area()
-  geom_raster(aes(fill=ggplot::density))
-  geom_contour(aes(z=density, color=..level..))
-
-
-
-
-
-
-
-
-
-
