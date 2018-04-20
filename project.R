@@ -7,6 +7,9 @@ library(ggrepel)
 library(scales)
 library(directlabels)
 
+#Is there a relationship between the number of shots taken by both teams, the period and the number of goals scored?
+#goals ~ shots + period
+
 games.data <- GET('https://api.mysportsfeeds.com/v1.2/pull/nhl/2015-2016-regular/full_game_schedule.json', authenticate('njpsy', 'asdfasdf'), 
             add_headers('Content-Type'='application/json', 'Accept-Encoding'='gzip')) %>%
   content(as='text', encoding='UTF-8') %>%
@@ -36,12 +39,36 @@ box.data <- game.dates$date %>%
   map_df(~API.Query(.)) %>%
   select(8, 24) %>%
   unnest() %>%
-  mutate(goals = awayScore %>% as.numeric() + homeScore %>% as.numeric()) %>%
+  map_df(~type.convert(.)) %>%
+  mutate(goals = awayScore + homeScore,
+         shots = awayShots + homeShots) %>%
   select(-c(3:6)) %>%
-  setNames(c('game.ID'='id', '@number'='period', 'goals'='goals')) %>%
+  rename(id=game.ID, period=`@number`) %>%
   filter(period %in% 1:3) %>%
+  mutate(id = as.character(id),
+         period = as.factor(period)) %>%
   as.tibble()
 
+fit <- lm(goals ~ shots + period, data=box.data)
+
+summary(fit)
+
+coefficients(fit) # model coefficients
+confint(fit, level=0.95) # CIs for model parameters 
+fitted(fit) # predicted values
+residuals(fit) # residuals
+anova(fit) # anova table 
+vcov(fit) # covariance matrix for model parameters 
+influence(fit) # regression diagnostics
+
+
+ggplot(spread.data) +
+  geom_histogram(aes(x=shots, fill=factor(reorder(goals, -goals))), bins=35) +
+  labs(x='Shots',
+       y='Frequency',
+       title='Distribution of Shots per Period',
+       fill='Goals Scored') +
+  scale_fill_brewer(palette='YlOrRd', direction=-1)
 
 box.data %>%
   filter(period == '1') %>%
@@ -83,22 +110,6 @@ box.data %>%
 
 
 ggplot(box.data) +
-  geom_histogram(aes(x=goals, y=..count../sum(..count..), fill=period), bins=8, show.legend=FALSE)  +
-  scale_x_discrete(limits=0:7, breaks=0:7) + 
-  scale_y_continuous(limits=c(0, 0.12), breaks=seq(0, 0.12, 0.02), expand=c(0, 0), labels=percent) +
-  facet_wrap(~period, ncol=1) +
-  labs(x=NULL,
-       y=NULL,
-       title='Proportion of Goals Scored by Period') +
-  theme_bw() + 
-  theme(legend.position='None',
-        strip.background=element_rect(fill='grey70'),
-        strip.text=element_text(color='black', size=12),
-        axis.text=element_text(size=10),
-        panel.grid.minor=element_blank(),
-        panel.grid.major.x=element_blank())
-
-ggplot(box.data) +
   geom_density(aes(x=goals, fill=period, color=period), alpha=0.2, adjust=3)  +
   geom_vline(data=summary.box.data, aes(xintercept=m, color=period2)) +
   scale_x_discrete(limits=0:7, breaks=0:7, expand=c(0, 0)) + 
@@ -121,20 +132,6 @@ ggplot(box.data) +
         axis.text=element_text(size=12))
 
 
-ggplot(box.data) +
-  geom_violin(aes(x=period, y=goals, fill=period), show.legend=FALSE, adjust=3)  +
-  scale_y_discrete(limits=0:7, breaks=0:7, expand=c(0, 0, .05, .05)) +
-  labs(x='Period', 
-       y='Goals Scored',
-       fill='Period',
-       title='Number of Goals Scored by Period') +
-  scale_fill_brewer(palette='Pastel1') +
-  theme_minimal() +
-  theme(panel.grid.major.x=element_blank(),
-        panel.background=element_rect(color='black'),
-        axis.line.x=element_line(color='black'),
-        axis.text=element_text(size=12))
-
 ggplot(box.data, aes(fill=factor(goals), group=goals)) +
   geom_bar(aes(x=period), position=position_fill(reverse=TRUE)) +
   scale_fill_brewer(palette = 'YlOrRd') +
@@ -145,10 +142,3 @@ ggplot(box.data, aes(fill=factor(goals), group=goals)) +
        y=NULL,
        title='Makeup of Scoring by Period') + 
   guides(fill=guide_legend(reverse=TRUE))
-
-
-box.data %>%
-  group_by(period) %>%
-  count(a = goals %in% max(goals),
-        b = max(goals)) %>%
-  filter(a == TRUE)
