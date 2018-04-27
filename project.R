@@ -124,16 +124,71 @@ anova(fit) # anova table
 vcov(fit) # covariance matrix for model parameters 
 influence(fit) # regression diagnostics
 
+ggplot(box_data, aes(x=shots, y=goals, color=factor(period))) +
+  geom_jitter(aes(shape=factor(period)), alpha=0.5, show.legend=FALSE) +
+  geom_smooth(method='lm') +
+  labs(x='Shots',
+       y='Goals',
+       color='Period',
+       title='Multiple Regression of Goals ~ Shots + Period') +
+  theme_bw() + 
+  theme(legend.position = c(0.2, 0.9),
+        legend.title.align = 0.5,
+        legend.background = element_rect(color='black', fill='grey95'),
+        legend.text = element_text(size=15)
+        ) +
+  guides(color = guide_legend(ncol=3,
+         label.position = 'top',
+         label.hjust = 0.5)
+  )
+
 # regression fit ----------------------------------------------------------
 
 
 # precondition check ------------------------------------------------------
 
-ggplot() +
-  geom_point(aes(1:3690, fit$residuals)) +
-  geom_hline(yintercept=0, color='yellow')
 
-#3 more
+#The residuals of the model are nearly normal
+data.frame(r=fit$residuals) %>%
+ggplot() +
+  geom_histogram(aes(r, ..density..), bins=35) +
+  stat_function(fun=dnorm, args=list(mean=mean(fit$residuals), sd=sd(fit$residuals)), color='red', size=2) +
+  labs(x='Residuals',
+       y='Density',
+       title='Residuals are Nearly Normal')
+
+#The variability of the residuals is nearly constant
+data.frame(fitted = cut(fit$fitted.values, breaks=6), resid = abs(fit$residuals)) %>%
+  ggplot(aes(fitted, resid)) +
+  #geom_jitter(shape=1, alpha=1/5)
+  geom_violin() +
+  labs(x='Fitted Values',
+       y='Absolute Value Residuals',
+       title='Variability of Residuals is Nearly Constant')
+
+#The residuals are independent
+data.frame(order=1:3690, resid=fit$residuals) %>%
+  ggplot(aes(order, resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, color='yellow') +
+  labs(x='Order of Collection',
+       y='Residuals',
+       title='Residuals are Independent')
+
+#Each variable is linearly related to the outcome
+resid.box.data <- box.data %>%
+  mutate(resid = fit$residuals)
+
+ggplot(resid.box.data, aes(shots, resid)) +
+  geom_jitter(shape=1, alpha=1/5) +
+  scale_x_continuous(labels=seq(3, 43, 5), limits=c(3, 43), breaks=seq(3, 43, 5)) +
+  labs(x='Shots',
+       y='Residuals')
+
+ggplot(resid.box.data, aes(period, resid)) +
+  geom_boxplot(aes(group=period)) +
+  geom_point(shape=1, alpha=1/5)
+
 
 # precondition check ------------------------------------------------------
 
