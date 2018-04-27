@@ -1,0 +1,231 @@
+---
+title: "606 Final Project"
+author: "Brian Weinfeld"
+date: "April 27, 2018"
+output: 
+  slidy_presentation:
+    df_print: kable
+    css: https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(magrittr)
+library(httr)
+library(jsonlite)
+library(psych)
+library(ggrepel)
+library(scales)
+library(directlabels)
+library(knitr)
+library(kableExtra)
+load('C:\\Users\\Brian\\Desktop\\GradClasses\\Spring18\\606\\606project\\nhl.RData')
+```
+
+## Question
+
+In the National Hockey League (NHL), is there a relationship between the number of goals scored and the number of shots taken when considering the period?
+
+I am a big fan of the NHL and one aspect I had noticed is that there seems to be more goals scored in the 2nd period and 3rd period then when compared to the 1st period. I decided to explore this relationship in order to determine whether I was correct in my assertion.
+
+## Data Collection
+
+I began by collected data via an API from mysportsfeeds.com. I collected data from all 1230 games from the 2015-2016 NHL regular season and organized it by game, period, goals and number of shots. Below is a sample of the collected data.
+
+```{r echo=FALSE}
+box.data[1:10, -1] %>% 
+  kable('html') %>%
+  kable_styling(bootstrap_options = c('striped', 'hover'))
+```
+
+## Raw Data Analysis
+
+!!FIX UP!!
+
+My explanatory variables are shots (quantitative) and period (qualitative) in order to determine (goals)
+
+## Exploratory Analysis
+
+```{r echo=FALSE}
+box.data %>%
+  mutate(period = paste0('Period ', period)) %>%
+  ggplot() +
+  geom_histogram(aes(shots, fill=period), bins=37) +
+  facet_wrap(~period, ncol=1) +
+  labs(x=NULL,
+       y=NULL,
+       title='Frequency of Shots by Period') +
+  scale_x_continuous(limits=c(0, 40), breaks=seq(0, 40, 5)) +
+  theme_bw() + 
+  theme(legend.position='None',
+        strip.background=element_rect(fill='grey70'),
+        strip.text=element_text(color='black', size=12),
+        axis.text=element_text(size=10),
+        panel.grid.minor=element_blank(),
+        panel.grid.major.x=element_blank())
+```
+
+---
+
+```{r echo=FALSE}
+box.data %>%
+  mutate(period=paste('Period ', period)) %>%
+  ggplot() +
+  geom_bar(aes(x=goals, y=(..count../sum(..count..)), fill=period))  +
+  scale_x_discrete(limits=0:7, breaks=0:7) + 
+  scale_y_continuous(limits=c(0, 0.12), breaks=seq(0, 0.12, 0.02), expand=c(0, 0), labels=percent) +
+  facet_wrap(~period, ncol=1) +
+  labs(x=NULL,
+       y=NULL,
+       title='Proportion of Goals Scored by Period') +
+  theme_bw() + 
+  theme(legend.position='None',
+        strip.background=element_rect(fill='grey70'),
+        strip.text=element_text(color='black', size=12),
+        axis.text=element_text(size=10),
+        panel.grid.minor=element_blank(),
+        panel.grid.major.x=element_blank())  
+```
+
+---
+
+```{r echo=FALSE}
+ggplot(box.data, aes(fill=factor(goals), group=goals)) +
+  geom_bar(aes(x=period), position=position_fill(reverse=TRUE)) +
+  scale_fill_brewer(palette = 'YlOrRd') +
+  scale_y_continuous(labels=percent_format(),
+                     expand=c(0, 0)) +
+  labs(fill='Goals',
+       x='Period',
+       y=NULL,
+       title='Makeup of Scoring by Period') + 
+  guides(fill=guide_legend(reverse=TRUE))
+```
+
+---
+
+!!!DO DATA ANALYSIS IN ADDITION TO GRAPH ANALYSIS!!!
+
+The exploratory analysis seemed to support my initial observation that more goals are scored in the 2nd and 3rd period than the first. The difference between the 1st period and the other is small, but it is important to remember that this average is across the entire season of over 1200 games. The difference could be statistically significant.
+
+## Precondition Verification
+
+Below regression analysis, I needed to ensure that the precondition for analysis were met.
+
+1. The residuals of the model are nearly normal.
+
+```{r}
+data.frame(r=fit$residuals) %>%
+ggplot() +
+  geom_histogram(aes(r, ..density..), bins=35) +
+  stat_function(fun=dnorm, args=list(mean=mean(fit$residuals), sd=sd(fit$residuals)), color='red', size=2) +
+  labs(x='Residuals',
+       y='Density',
+       title='Residuals are Nearly Normal')
+```
+
+---
+
+2. The variability of the residuals is nearly constant
+
+```{r}
+data.frame(fitted = cut(fit$fitted.values, breaks=6), resid = abs(fit$residuals)) %>%
+  ggplot(aes(fitted, resid)) +
+  #geom_jitter(shape=1, alpha=1/5)
+  geom_violin() +
+  labs(x='Fitted Values',
+       y='Absolute Value Residuals',
+       title='Variability of Residuals is Nearly Constant')
+```
+
+---
+
+3. The residuals are independent
+
+```{r}
+data.frame(order=1:3690, resid=fit$residuals) %>%
+  ggplot(aes(order, resid)) +
+  geom_point() +
+  geom_hline(yintercept=0, color='yellow') +
+  labs(x='Order of Collection',
+       y='Residuals',
+       title='Residuals are Independent')
+```
+
+---
+
+4. Each variable is linearly related to the outcome
+
+```{r}
+resid.box.data <- box.data %>%
+  mutate(resid = fit$residuals)
+
+ggplot(resid.box.data, aes(shots, resid)) +
+  geom_jitter(shape=1, alpha=1/5) +
+  scale_x_continuous(labels=seq(3, 43, 5), limits=c(3, 43), breaks=seq(3, 43, 5)) +
+  labs(x='Shots',
+       y='Residuals')
+
+ggplot(resid.box.data, aes(period, resid)) +
+  geom_boxplot(aes(group=period)) +
+  geom_point(shape=1, alpha=1/5)
+```
+
+## Regression Analysis
+
+I fit the data on the following regression line: $goals \sim shots + period$. The regression provided the following equation and data:
+
+$$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times period3 + 0.185791$$
+
+```{r}
+summary(fit)
+```
+
+While the $R^2_{adj}$ is low, indicating that the parameters of shots and period only explain a small portion of the variability of the data, the p-value for shots and period are both well below 0.01 and are statistically significant.
+
+---
+
+$$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times period3 + 0.185791$$
+
+```{r}
+ggplot(box_data, aes(x=shots, y=goals, color=factor(period))) +
+  geom_jitter(aes(shape=factor(period)), alpha=0.5, show.legend=FALSE) +
+  geom_smooth(method='lm') +
+  labs(x='Shots',
+       y='Goals',
+       color='Period',
+       title='Multiple Regression of Goals ~ Shots + Period') +
+  theme_bw() + 
+  theme(legend.position = c(0.2, 0.9),
+        legend.title.align = 0.5,
+        legend.background = element_rect(color='black', fill='grey95'),
+        legend.text = element_text(size=15)
+        ) +
+  guides(color = guide_legend(ncol=3,
+         label.position = 'top',
+         label.hjust = 0.5)
+  )
+```
+
+## Conclusion
+
+$$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times period3 + 0.185791$$
+
+With p-values close to 0, there is incredibly strong evidence to support the conclusion that there are more goals scored in the 2nd and 3rd period of NHL games when compared to the first period. For the 2nd period, this is most likely caused due to the teams switching sides of the ice resulting in less consistent line changes. For the 3rd period, the fact that the end of the game is approaching likely motivates teams to take more risks which leads to more goals scored and more goals allows (this includes empty net goals)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
