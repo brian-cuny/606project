@@ -7,6 +7,8 @@ library(ggrepel)
 library(scales)
 library(directlabels)
 
+load('C:\\Users\\Brian\\Desktop\\GradClasses\\Spring18\\606\\606project\\nhl.RData')
+
 #Is there a relationship between the number of shots taken by both teams, the period and the number of goals scored?
 #goals ~ shots + period
 
@@ -56,8 +58,13 @@ box.data <- game.dates$date %>%
 # explore individual data -------------------------------------------------
 box.data %>%
   group_by(period) %>%
-  summarize(min = min(shots),
-            max = max(shots))
+  summarize(n = n(),
+            mean = mean(shots),
+            sd = sd(shots),
+            median = median(shots),
+            min = min(shots),
+            max = max(shots),
+            range = max - min)
 
 box.data %>%
   mutate(period = paste0('Period ', period)) %>%
@@ -75,6 +82,17 @@ box.data %>%
         axis.text=element_text(size=10),
         panel.grid.minor=element_blank(),
         panel.grid.major.x=element_blank())
+
+
+box.data %>%
+  group_by(period) %>%
+  summarize(n = n(),
+            mean = mean(goals),
+            sd = sd(goals),
+            median = median(goals),
+            min = min(goals),
+            max = max(goals),
+            range = max - min)
 
 box.data %>%
   mutate(period=paste('Period ', period)) %>%
@@ -104,17 +122,23 @@ ggplot(box.data, aes(fill=factor(goals), group=goals)) +
        y=NULL,
        title='Makeup of Scoring by Period') + 
   guides(fill=guide_legend(reverse=TRUE))
+
+aov(goals ~ period, box.data) %>%
+  summary()
 # explore individual data -------------------------------------------------
 
 
 # regression fit ----------------------------------------------------------
+
+box.data %<>%
+  mutate(period = factor(period))
 
 fit <- lm(goals ~ shots + period, data=box.data)
 
 summary(fit)
 
 #goals = 0.066448*shots + 0.285678*period2 + 0.472701*period3 + 0.185791
-#shots range 7-40
+
 
 coefficients(fit) # model coefficients
 confint(fit, level=0.95) # CIs for model parameters 
@@ -132,10 +156,13 @@ ggplot(box_data, aes(x=shots, y=goals, color=factor(period))) +
        color='Period',
        title='Multiple Regression of Goals ~ Shots + Period') +
   theme_bw() + 
-  theme(legend.position = c(0.2, 0.9),
+  theme(legend.position = c(0.1, 0.9),
         legend.title.align = 0.5,
         legend.background = element_rect(color='black', fill='grey95'),
-        legend.text = element_text(size=15)
+        legend.text = element_text(size=20),
+        axis.text = element_text(size=15),
+        axis.title = element_text(size=20),
+        axis.ticks.length = unit(0.3, 'cm')
         ) +
   guides(color = guide_legend(ncol=3,
          label.position = 'top',
@@ -160,8 +187,8 @@ ggplot() +
 #The variability of the residuals is nearly constant
 data.frame(fitted = cut(fit$fitted.values, breaks=6), resid = abs(fit$residuals)) %>%
   ggplot(aes(fitted, resid)) +
-  #geom_jitter(shape=1, alpha=1/5)
-  geom_violin() +
+  geom_jitter(shape=1, alpha=1/5)
+  #geom_violin() +
   labs(x='Fitted Values',
        y='Absolute Value Residuals',
        title='Variability of Residuals is Nearly Constant')
@@ -209,6 +236,47 @@ box.data %>%
 box.data %>%
   filter(period == '3') %>%
   describe()
+
+
+
+# simulation --------------------------------------------------------------
+
+simulation.data <- box.data %>%
+  summarize(n = n(),
+            mean = mean(goals),
+            sd = sd(goals),
+            median = median(goals),
+            min = min(goals),
+            max = max(goals),
+            range = max - min)
+
+set.seed(200)
+
+sim.data <- rnorm(1230, mean=simulation.data$mean, sd=simulation.data$sd)
+
+ggplot(data=data.frame(x=c(-4, 7)), aes(x)) +
+  stat_function(fun=dnorm, args=list(mean=simulation.data$mean, sd=simulation.data$sd)) +
+  stat_function(fun=dnorm, args=list(mean=simulation.data$mean, sd=simulation.data$sd), xlim=c(1.91, 7), geom='area') +
+  geom_vline(xintercept=simulation.data$mean) +
+  labs(x='Goals',
+       y='Proportion',
+       title='Simulation of 3rd Period Goals')
+
+pnorm(q=1.91, mean=simulation.data$mean, sd=simulation.data$sd, lower.tail=FALSE)
+
+# simulation --------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

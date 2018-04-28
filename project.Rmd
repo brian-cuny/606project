@@ -5,7 +5,11 @@ date: "April 27, 2018"
 output: 
   slidy_presentation:
     df_print: kable
-    css: https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css
+    css: 
+      - https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css
+      - custom.css
+    font_adjustment: +1
+    highlight: pygments
 ---
 
 ```{r setup, include=FALSE}
@@ -23,15 +27,61 @@ library(kableExtra)
 load('C:\\Users\\Brian\\Desktop\\GradClasses\\Spring18\\606\\606project\\nhl.RData')
 ```
 
-## Question
+<div class='jumbotron'>
+Introduction
+</div>
 
 In the National Hockey League (NHL), is there a relationship between the number of goals scored and the number of shots taken when considering the period?
 
-I am a big fan of the NHL and one aspect I had noticed is that there seems to be more goals scored in the 2nd period and 3rd period then when compared to the 1st period. I decided to explore this relationship in order to determine whether I was correct in my assertion.
+$$goals\sim shots + period$$
 
-## Data Collection
+<div class='col-right'>
+<p>
+I am a big fan of the NHL and one aspect I had noticed is that there seems to be more goals scored in the 2nd period and 3rd period when compared to the 1st period. I decided to explore this relationship in order to determine whether this perceived difference is statistically significant.
+</p>
 
-I began by collected data via an API from mysportsfeeds.com. I collected data from all 1230 games from the 2015-2016 NHL regular season and organized it by game, period, goals and number of shots. Below is a sample of the collected data.
+<p>
+I also believe that this investigation may reveal insight on possible future rule changes the NHL could make to increase scoring with the goal of increasing scoring while still keeping the "spirit" of the game.
+</p>
+
+<p>
+I will be performing a multiple linear regression analysis considering goals scored, shots taken and period of play (1st, 2nd or 3rd).
+</p>
+</div>
+
+<div class='col-left'>
+<img class='hockey-pic' src='C:\\Users\\Brian\\Desktop\\GradClasses\\Spring18\\606\\606project\\hockey.jpg'>
+</div>
+
+<div class='clearfix'>
+</div>
+
+---
+
+<div class='jumbotron'>
+Data Collection
+</div>
+
+- Data Source: Scraped from API at mysportsfeeds.com, a fan run sports data collection website
+- Cases: 1230 observations representing all the games from the 2015-2016 NHL regular season
+- Response Variable:
+    + Goals Scored
+- Explanatory Variables:
+    + Quantitative: Shots taken by both teams
+    + Qualitative: Period of the Game (1st, 2nd or 3rd)
+- Type of Study: Observational
+- Generalizability: Population of interest is all NHL regular season games from 2013 onwards (the last time the rules to the game were substantially changed)
+- Causality: As this is an observational study, causality cannot be established
+
+---
+
+<div class='jumbotron'>
+Data Collection
+</div>
+
+<p>
+The raw data was collected and tidied in R. Below is a sample of the collected data.
+</p>
 
 ```{r echo=FALSE}
 box.data[1:10, -1] %>% 
@@ -39,14 +89,13 @@ box.data[1:10, -1] %>%
   kable_styling(bootstrap_options = c('striped', 'hover'))
 ```
 
-## Raw Data Analysis
+---
 
-!!FIX UP!!
+<div class='jumbotron'>
+Exploratory Analysis
+</div>
 
-My explanatory variables are shots (quantitative) and period (qualitative) in order to determine (goals)
-
-## Exploratory Analysis
-
+<div class='col-left'>
 ```{r echo=FALSE}
 box.data %>%
   mutate(period = paste0('Period ', period)) %>%
@@ -65,9 +114,34 @@ box.data %>%
         panel.grid.minor=element_blank(),
         panel.grid.major.x=element_blank())
 ```
+</div>
+
+<div class='col-right'>
+```{r, echo=FALSE}
+box.data %>%
+  group_by(period) %>%
+  summarize(n = n(),
+            mean = mean(shots),
+            sd = sd(shots),
+            median = median(shots),
+            min = min(shots),
+            max = max(shots),
+            range = max - min) %>%
+  kable('html') %>%
+  kable_styling(bootstrap_options = c('striped', 'hover'))
+```
+</div>
+<div class='clearfix'></div>
+
+The distributions of shots per period are very similar. This appears to indicate that the period of play does not affect the number of shots taken.
 
 ---
 
+<div class='jumbotron'>
+Exploratory Analysis
+</div>
+
+<div class='col-left'>
 ```{r echo=FALSE}
 box.data %>%
   mutate(period=paste('Period ', period)) %>%
@@ -87,9 +161,34 @@ box.data %>%
         panel.grid.minor=element_blank(),
         panel.grid.major.x=element_blank())  
 ```
+</div>
+
+<div class='col-right'>
+```{r, echo=FALSE}
+box.data %>%
+  group_by(period) %>%
+  summarize(n = n(),
+            mean = mean(goals),
+            sd = sd(goals),
+            median = median(goals),
+            min = min(goals),
+            max = max(goals),
+            range = max - min) %>%
+  kable('html') %>%
+  kable_styling(bootstrap_options = c('striped', 'hover'))
+```
+</div>
+<div class='clearfix'></div>
+
+The number of goals scored when considering period shows some variation. The difference is not much but considering the breadth of the sample, it could be meainingful to have nearly a $\frac{1}{2}$ goal difference between periods.
 
 ---
 
+<div class='jumbotron'>
+Exploratory Analysis
+</div>
+
+<div class='col-left'>
 ```{r echo=FALSE}
 ggplot(box.data, aes(fill=factor(goals), group=goals)) +
   geom_bar(aes(x=period), position=position_fill(reverse=TRUE)) +
@@ -102,20 +201,62 @@ ggplot(box.data, aes(fill=factor(goals), group=goals)) +
        title='Makeup of Scoring by Period') + 
   guides(fill=guide_legend(reverse=TRUE))
 ```
+</div>
+
+<div class='col-right'>
+```{r, echo=FALSE}
+aov(goals ~ period, box.data) %>%
+  summary()
+```
+</div>
+<div class='clearfix'></div>
+
+The exploratory analysis is promising. There appears to be a significant difference in the number of goals scored per period.
 
 ---
 
-!!!DO DATA ANALYSIS IN ADDITION TO GRAPH ANALYSIS!!!
+<div class='jumbotron'>
+Simulation
+</div>
 
-The exploratory analysis seemed to support my initial observation that more goals are scored in the 2nd and 3rd period than the first. The difference between the 1st period and the other is small, but it is important to remember that this average is across the entire season of over 1200 games. The difference could be statistically significant.
+????perform simulation????
 
-## Precondition Verification
+Although the preconditions for analysis have been met, I performed a simulation comparing the distribution of the goals scored if there were no difference between the periods, highlighting the results of period 3 goals.
 
-Below regression analysis, I needed to ensure that the precondition for analysis were met.
+```{r, echo=FALSE}
+simulation.data <- box.data %>%
+  summarize(n = n(),
+            mean = mean(goals),
+            sd = sd(goals),
+            median = median(goals),
+            min = min(goals),
+            max = max(goals),
+            range = max - min)
 
-1. The residuals of the model are nearly normal.
+set.seed(200)
 
-```{r}
+sim.data <- rnorm(1230, mean=simulation.data$mean, sd=simulation.data$sd)
+
+ggplot(data=data.frame(x=c(-4, 7)), aes(x)) +
+  stat_function(fun=dnorm, args=list(mean=simulation.data$mean, sd=simulation.data$sd)) +
+  stat_function(fun=dnorm, args=list(mean=simulation.data$mean, sd=simulation.data$sd), xlim=c(1.91, 7), geom='area') +
+  geom_vline(xintercept=simulation.data$mean) +
+  labs(x='Goals',
+       y='Proportion',
+       title='Simulation of 3rd Period Goals')
+```
+
+---
+
+<div class='jumbotron'>
+Precondition Verification
+</div>
+
+Before regression analysis, I needed to ensure that the precondition for analysis were met.
+
+- The residuals of the model are nearly normal.
+
+```{r, echo=FALSE}
 data.frame(r=fit$residuals) %>%
 ggplot() +
   geom_histogram(aes(r, ..density..), bins=35) +
@@ -127,9 +268,15 @@ ggplot() +
 
 ---
 
-2. The variability of the residuals is nearly constant
+<div class='jumbotron'>
+Precondition Verification
+</div>
 
-```{r}
+Before regression analysis, I needed to ensure that the precondition for analysis were met.
+
+- The variability of the residuals is nearly constant
+
+```{r, echo=FALSE}
 data.frame(fitted = cut(fit$fitted.values, breaks=6), resid = abs(fit$residuals)) %>%
   ggplot(aes(fitted, resid)) +
   #geom_jitter(shape=1, alpha=1/5)
@@ -141,13 +288,19 @@ data.frame(fitted = cut(fit$fitted.values, breaks=6), resid = abs(fit$residuals)
 
 ---
 
-3. The residuals are independent
+<div class='jumbotron'>
+Precondition Verification
+</div>
 
-```{r}
+Before regression analysis, I needed to ensure that the precondition for analysis were met.
+
+- The residuals are independent
+
+```{r, echo=FALSE}
 data.frame(order=1:3690, resid=fit$residuals) %>%
   ggplot(aes(order, resid)) +
   geom_point() +
-  geom_hline(yintercept=0, color='yellow') +
+  geom_hline(yintercept=0, color='yellow', size=2) +
   labs(x='Order of Collection',
        y='Residuals',
        title='Residuals are Independent')
@@ -155,9 +308,16 @@ data.frame(order=1:3690, resid=fit$residuals) %>%
 
 ---
 
-4. Each variable is linearly related to the outcome
+<div class='jumbotron'>
+Precondition Verification
+</div>
 
-```{r}
+Before regression analysis, I needed to ensure that the precondition for analysis were met.
+
+- Each variable is linearly related to the outcome
+
+<div class='col-left'>
+```{r, echo=FALSE}
 resid.box.data <- box.data %>%
   mutate(resid = fit$residuals)
 
@@ -165,30 +325,57 @@ ggplot(resid.box.data, aes(shots, resid)) +
   geom_jitter(shape=1, alpha=1/5) +
   scale_x_continuous(labels=seq(3, 43, 5), limits=c(3, 43), breaks=seq(3, 43, 5)) +
   labs(x='Shots',
-       y='Residuals')
+       y='Residuals',
+       title='Shot/Goal Variability')
+```
+</div>
 
+<div class='col-right'>
+```{r, echo=FALSE}
 ggplot(resid.box.data, aes(period, resid)) +
   geom_boxplot(aes(group=period)) +
-  geom_point(shape=1, alpha=1/5)
+  geom_point(shape=1, alpha=1/5) +
+  labs(x='Period',
+       y='Residual',
+       labs='Period/Goal Variability')
 ```
-
-## Regression Analysis
-
-I fit the data on the following regression line: $goals \sim shots + period$. The regression provided the following equation and data:
-
-$$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times period3 + 0.185791$$
-
-```{r}
-summary(fit)
-```
-
-While the $R^2_{adj}$ is low, indicating that the parameters of shots and period only explain a small portion of the variability of the data, the p-value for shots and period are both well below 0.01 and are statistically significant.
+</div>
 
 ---
 
+<div class='jumbotron'>
+Regression Analysis
+</div>
+
 $$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times period3 + 0.185791$$
 
-```{r}
+<div class='col-left'>
+```{r, echo=FALSE}
+summary(fit)
+```
+</div>
+
+<div class='col-right'>
+<p>
+While the $R^2_{adj}$ is low, indicating that the variables of shots and period only explain a small portion of the variability of the data, the p-value for shots and period are both well below 0.01 and are statistically significant.
+</p>
+
+<p>
+The regression indicates that, everything else being equal, the 3rd period expected nearly an extra $\frac{1}{2}$ of a goal when compared to the 1st period. The 2nd period is less pronounced but still has a difference of about $\frac{2}{7}$ of a goal.
+</p>
+</div>
+
+<div class='clearfix'></div>
+
+---
+
+<div class='jumbotron'>
+Regression Analysis
+</div>
+
+$$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times period3 + 0.185791$$
+
+```{r, echo=FALSE}
 ggplot(box_data, aes(x=shots, y=goals, color=factor(period))) +
   geom_jitter(aes(shape=factor(period)), alpha=0.5, show.legend=FALSE) +
   geom_smooth(method='lm') +
@@ -197,10 +384,13 @@ ggplot(box_data, aes(x=shots, y=goals, color=factor(period))) +
        color='Period',
        title='Multiple Regression of Goals ~ Shots + Period') +
   theme_bw() + 
-  theme(legend.position = c(0.2, 0.9),
+  theme(legend.position = c(0.1, 0.9),
         legend.title.align = 0.5,
         legend.background = element_rect(color='black', fill='grey95'),
-        legend.text = element_text(size=15)
+        legend.text = element_text(size=20),
+        axis.text = element_text(size=15),
+        axis.title = element_text(size=20),
+        axis.ticks.length = unit(0.3, 'cm')
         ) +
   guides(color = guide_legend(ncol=3,
          label.position = 'top',
@@ -208,24 +398,22 @@ ggplot(box_data, aes(x=shots, y=goals, color=factor(period))) +
   )
 ```
 
-## Conclusion
+---
+
+<div class='jumbotron'>
+Conclusion
+</div>
 
 $$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times period3 + 0.185791$$
 
-With p-values close to 0, there is incredibly strong evidence to support the conclusion that there are more goals scored in the 2nd and 3rd period of NHL games when compared to the first period. For the 2nd period, this is most likely caused due to the teams switching sides of the ice resulting in less consistent line changes. For the 3rd period, the fact that the end of the game is approaching likely motivates teams to take more risks which leads to more goals scored and more goals allows (this includes empty net goals)
+- With p-values close to 0, there is incredibly strong evidence to support the conclusion that there are more goals scored in the 2nd and 3rd period of NHL games when compared to the first period. 
 
+- For the 2nd period, this is most likely caused due to the teams switching sides of the ice resulting in less consistent line changes. 
 
+- For the 3rd period, the fact that the end of the game is approaching likely motivates teams to take more risks which leads to more goals scored and more goals allowed (this includes empty net goals)
 
+- In order to increase scoring, I would recommend swapping the starting sides of the ice. That is, the 1st and 3rd period plays with the long change while the 2nd plays with the short.
 
+- Theoretically, this would increasing scoring in the 3rd period upwards of $0.285678+0.472701=0.758379$ above the baseline. This is roughly equivelant to an extra $1230\times 0.285678\approx 351$ goals per season.
 
-
-
-
-
-
-
-
-
-
-
-
+- Additional research would need to be conducted to determine whether such an increase would actually be seen or whether there are lurking variables not being accounted for.
