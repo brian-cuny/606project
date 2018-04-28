@@ -24,7 +24,8 @@ library(scales)
 library(directlabels)
 library(knitr)
 library(kableExtra)
-load('C:\\Users\\Brian\\Desktop\\GradClasses\\Spring18\\606\\606project\\nhl.RData')
+library(repmis)
+source_data('https://github.com/brian-cuny/606project/raw/master/nhl.RData?raw=True')
 ```
 
 <div class='jumbotron'>
@@ -50,7 +51,7 @@ I will be performing a multiple linear regression analysis considering goals sco
 </div>
 
 <div class='col-left'>
-<img class='hockey-pic' src='C:\\Users\\Brian\\Desktop\\GradClasses\\Spring18\\606\\606project\\hockey.jpg'>
+<img class='hockey-pic' src='https://raw.githubusercontent.com/brian-cuny/606project/master/hockey.jpg'>
 </div>
 
 <div class='clearfix'>
