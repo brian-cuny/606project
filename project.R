@@ -266,11 +266,10 @@ pnorm(q=1.91, mean=simulation.data$mean, sd=simulation.data$sd, lower.tail=FALSE
 
 # simulation --------------------------------------------------------------
 
+sim.shots <- rnorm(1230, mean(box.data$shots), sd(box.data$shots))
+  
 
-
-
-
-
+  
 
 
 

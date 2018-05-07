@@ -1,7 +1,7 @@
 ---
 title: "606 Final Project"
 author: "Brian Weinfeld"
-date: "April 27, 2018"
+date: "May 7th, 2018"
 output: 
   slidy_presentation:
     df_print: kable
@@ -217,39 +217,6 @@ The exploratory analysis is promising. There appears to be a significant differe
 ---
 
 <div class='jumbotron'>
-Simulation
-</div>
-
-????perform simulation????
-
-Although the preconditions for analysis have been met, I performed a simulation comparing the distribution of the goals scored if there were no difference between the periods, highlighting the results of period 3 goals.
-
-```{r, echo=FALSE}
-simulation.data <- box.data %>%
-  summarize(n = n(),
-            mean = mean(goals),
-            sd = sd(goals),
-            median = median(goals),
-            min = min(goals),
-            max = max(goals),
-            range = max - min)
-
-set.seed(200)
-
-sim.data <- rnorm(1230, mean=simulation.data$mean, sd=simulation.data$sd)
-
-ggplot(data=data.frame(x=c(-4, 7)), aes(x)) +
-  stat_function(fun=dnorm, args=list(mean=simulation.data$mean, sd=simulation.data$sd)) +
-  stat_function(fun=dnorm, args=list(mean=simulation.data$mean, sd=simulation.data$sd), xlim=c(1.91, 7), geom='area') +
-  geom_vline(xintercept=simulation.data$mean) +
-  labs(x='Goals',
-       y='Proportion',
-       title='Simulation of 3rd Period Goals')
-```
-
----
-
-<div class='jumbotron'>
 Precondition Verification
 </div>
 
@@ -415,6 +382,6 @@ $$\widehat{goals}=0.066448\times shots+0.285678\times period2+0.472701\times per
 
 - In order to increase scoring, I would recommend swapping the starting sides of the ice. That is, the 1st and 3rd period plays with the long change while the 2nd plays with the short.
 
-- Theoretically, this would increasing scoring in the 3rd period upwards of $0.285678+0.472701=0.758379$ above the baseline. This is roughly equivelant to an extra $1230\times 0.285678\approx 351$ goals per season.
+- Theoretically, this could increase scoring in the 3rd period upwards of $0.285678+0.472701=0.758379$  above the baseline. This is roughly equivelant to an extra $1230\times 0.285678\approx 351$ goals per season.
 
 - Additional research would need to be conducted to determine whether such an increase would actually be seen or whether there are lurking variables not being accounted for.
